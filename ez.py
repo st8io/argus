@@ -27,12 +27,12 @@ def find_button_by_keywords(image_path):
 
 def find_words(image_path):
     coordinates = []
+    print(image_path)
     results = reader.readtext(image_path)
 
     for bbox, text, conf in results:
         if text.strip().lower() in keywords:
             print(f"Detected text: {text}")
-            print(f"Bounding box coordinates: {bbox}\n")
             coordinates.append(get_center(bbox))
     return coordinates
 
@@ -49,8 +49,7 @@ def get_center(bbox):
     x_coords = [pt[0] for pt in bbox]
     y_coords = [pt[1] for pt in bbox]
 
-    scale_factor = int(os.environ['SCALE_FACTOR'])
-    center_x = int(sum(x_coords) / 4 / scale_factor)
-    center_y = int(sum(y_coords) / 4 / scale_factor)
+    center_x = int(sum(x_coords) / 4 )
+    center_y = int(sum(y_coords) / 4 )
 
     return (center_x, center_y)

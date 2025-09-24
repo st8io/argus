@@ -1,3 +1,4 @@
+import asyncio
 import os
 from urllib.parse import urlparse, parse_qs
 
@@ -11,12 +12,10 @@ async def take_screenshots(browser, urls, output_dir: str = "screenshots"):
     fallback_dir = os.path.join(output_dir, "fallback_screenshots")
     os.makedirs(fallback_dir, exist_ok=True)
 
-    scale_factor = int(os.environ['SCALE_FACTOR'])
-    page = await browser.newPage()
-    await page.setViewport({
+    page = await browser.new_page()
+    await page.set_viewport_size({
         "width": 1920,
-        "height": 1080,
-        "deviceScaleFactor": scale_factor,
+        "height": 1080
     })
 
     successful_screenshots = []
@@ -27,12 +26,14 @@ async def take_screenshots(browser, urls, output_dir: str = "screenshots"):
 
         print(f"Capturing {url} -> {save_path}")
 
-        await page.goto(url, {"waitUntil": ["domcontentloaded"]})
+        # TODO: keep an eye on this. it might break, then replace:
+        # await page.goto(url, wait_until="load")
+        await page.goto(url, wait_until="networkidle")
         depth = 0
         prev_status = ""
 
         while depth < 3:
-            await page.screenshot({"path": save_path})
+            await page.screenshot(path=save_path)
             status = get_loading_status(image_processing.encode_image(save_path))
             print(f"Status: {status}")
 
@@ -43,7 +44,7 @@ async def take_screenshots(browser, urls, output_dir: str = "screenshots"):
 
                 case "loading":
                     depth = _update_counter(prev_status, "loading", depth)
-                    await page.waitFor(3000)
+                    await asyncio.sleep(3)
 
                 case "start_screen":
                     cords = find_button_by_keywords(save_path)
@@ -53,17 +54,17 @@ async def take_screenshots(browser, urls, output_dir: str = "screenshots"):
                     depth = _update_counter(prev_status, "start_screen", depth)
                     if depth >= 2:  # fallback if stuck at start screen
                         fallback_path = os.path.join(fallback_dir, filename)
-                        await page.screenshot({"path": fallback_path})
+                        await page.screenshot(path=fallback_path)
                         successful_screenshots.append(save_path)
 
-                    await page.waitFor(2000)
+                    await asyncio.sleep(2)
 
                 case "error":
                     print(f"{filename} - failed to load")
                     break
 
             prev_status = status
-            await page.screenshot({"path": save_path})
+            await page.screenshot(path=save_path)
 
     return successful_screenshots
 

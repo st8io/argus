@@ -18,10 +18,10 @@ def format(themes_dict):
                  "Britain", "Mushrooms", "Middle East", "German", "Desperation", "Arctic"]
     data = []
     for game_code, themes in themes_dict.items():
-        game_object = {"code": game_code, "themes": []}
-        for theme in themes.split(", "):
+        game_object = {"code": game_code, "game_meta": {"themes": []}}
+        for theme in themes.split(","):
             theme = re.sub(r"\[[^]]*\]", "", theme).strip()
             if theme in whitelist:
-                game_object["themes"].append(theme)
+                game_object["game_meta"]["themes"].append(theme)
         data.append(game_object)
     return data

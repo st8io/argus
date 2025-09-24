@@ -1,13 +1,11 @@
 import base64
 
-from PIL import Image, ImageOps, ImageCms
+from PIL import Image, ImageOps
 
 def preprocess_for_white_text(image_path):
     img = Image.open(image_path).convert('L')  # grayscale
     img = ImageOps.invert(img)  # white → black
     pixels = img.load()
-
-    gray_profile = ImageCms.createProfile("GRAY")
 
     for y in range(img.height):
         for x in range(img.width):
@@ -15,9 +13,9 @@ def preprocess_for_white_text(image_path):
                 pixels[x, y] = 0
             else:
                 pixels[x, y] = 255
-    img.save("temp/temp1.png", icc_profile=ImageCms.ProfileToProfile(img, gray_profile))
+    img.save("temp/temp1.png")
 
-    return img
+    return "temp/temp1.png"
 
 
 def encode_image(image_path):
