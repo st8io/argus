@@ -4,7 +4,7 @@ from openai import OpenAI
 client = OpenAI()
 
 
-def get_themes(based_image):
+async def get_themes(based_image):
     prompt = """
 You are an image classification assistant.
 You will be given an image and a fixed set of possible labels. Your task is to carefully analyze the image and return the most relevant labels from the provided list.
@@ -47,7 +47,7 @@ Rules:
     return output
 
 
-def get_loading_status(based_image):
+async def get_loading_status(based_image):
     prompt = """
 You are an AI that analyzes screenshots of browser-based games to determine their loading status. You have no access to the game’s code, only to the image provided. Your task is to classify the image into one of the following four categories:
 1)"loading" — loading screen or progress bar, game logo with a loading animation, text such as "Loading" or "Загрузка".

@@ -1,3 +1,5 @@
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
 from playwright.async_api import async_playwright
 
@@ -11,6 +13,7 @@ import prompt
 from screenshotter import take_screenshots
 
 app = FastAPI()
+
 
 class GameCodesRequest(BaseModel):
     game_codes: List[str]
@@ -31,21 +34,16 @@ async def process_game_codes(request: GameCodesRequest):
 
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        screenshots = await take_screenshots(browser, urls)
+        screenshot_paths = await take_screenshots(browser, urls)
         await browser.close()
 
     if request.generate_themes:
-        themes_dict = {}
-        for filename in screenshots:
-            based_image = image_processing.encode_image(filename)
-            themes_dict[filename.split("/")[-1].split(".")[0]] = prompt.get_themes(based_image)
-
-        print(themes_dict)
+        themes_dict = await _collect_themes(screenshot_paths)
         data = cleaner.format(themes_dict)
         # TODO: save screenshots in the bucket
-        return {"screenshots": screenshots, "data": data}
+        return {"screenshots": screenshot_paths, "data": data}
 
-    return {"screenshots": screenshots}
+    return {"screenshots": screenshot_paths}
 
 
 @app.post("/process/screenshot")
@@ -53,6 +51,20 @@ async def process_screenshot(request: GameScreenshotRequest):
     themes_dict = {request.game_code: prompt.get_themes(request.screenshot)}
     data = cleaner.format(themes_dict)
     return {"themes": data}
+
+
+async def _process_image(filename: str) -> tuple[str, str]:
+    based_image = image_processing.encode_image(filename)
+    theme = await prompt.get_themes(based_image)
+    key = filename.split("/")[-1].split(".")[0]
+    return key, theme
+
+
+async def _collect_themes(screenshots: list[str]) -> dict:
+    tasks = [_process_image(filename) for filename in screenshots]
+    results = await asyncio.gather(*tasks)
+    return dict(results)
+
 
 if __name__ == "__main__":
     import warnings
