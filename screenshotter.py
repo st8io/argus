@@ -5,6 +5,7 @@ from urllib.parse import urlparse, parse_qs
 import image_processing
 from prompt import get_loading_status
 from ez import find_button_by_keywords
+from logger import logger
 
 screenshot_lock = asyncio.Lock()
 
@@ -26,6 +27,7 @@ async def take_screenshots(browser, urls, output_dir="screenshots", limit=2):
 
 async def screenshot_page(browser, url, fallback_dir, sem, output_dir="screenshots"):
     async with sem:
+        logger.info(f"Taking screenshot for {url}")
         page = await browser.new_page()
         try:
             await page.set_viewport_size({
@@ -39,8 +41,8 @@ async def screenshot_page(browser, url, fallback_dir, sem, output_dir="screensho
             print(f"Capturing {url} -> {save_path}")
 
             # TODO: keep an eye on this. it might break, then replace:
-            # await page.goto(url, wait_until="load")
-            await page.goto(url, wait_until="networkidle", timeout=300000)
+            await page.goto(url, wait_until="load")
+            # await page.goto(url, wait_until="networkidle", timeout=300000)
             await asyncio.sleep(3)
             depth = 0
             prev_status = ""

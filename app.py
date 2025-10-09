@@ -11,6 +11,7 @@ import cleaner
 import image_processing
 import prompt
 from screenshotter import take_screenshots
+from logger import logger
 
 app = FastAPI()
 
@@ -23,6 +24,11 @@ class GameCodesRequest(BaseModel):
 class GameScreenshotRequest(BaseModel):
     game_code: str
     screenshot: str
+
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Application started 🚀")
 
 
 @app.post("/process/butch")
@@ -51,6 +57,10 @@ async def process_screenshot(request: GameScreenshotRequest):
     themes_dict = {request.game_code: prompt.get_themes(request.screenshot)}
     data = cleaner.format(themes_dict)
     return {"themes": data}
+
+@app.get('/')
+def index():
+    return {"status": "ok", "message": "Hello from container"}
 
 
 async def _process_image(filename: str) -> tuple[str, str]:
